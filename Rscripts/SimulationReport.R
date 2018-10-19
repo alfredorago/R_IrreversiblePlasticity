@@ -9,6 +9,7 @@ simulFiles
 
 # Import all simulation to single data.frame
 simulData <- ldply(lapply(X = file.path(simulDir, simulFiles), read.table))
+names(simulData) <- c("Replicate", "Generation", "Individual", "Environment", "Trait", "Phenotype", "Fitness")
+
 head(simulData)
 summary(simulData)
-
