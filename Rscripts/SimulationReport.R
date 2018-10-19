@@ -13,3 +13,12 @@ names(simulData) <- c("Replicate", "Generation", "Individual", "Environment", "T
 
 head(simulData)
 summary(simulData)
+
+# Visualize fitness over time
+library(ggplot2)
+ggplot(data = simulData, mapping = aes(x = Generation, y = Fitness, group = Replicate)) +
+  geom_smooth(method = "lm") + geom_point()
+
+ggplot(data = simulData, mapping = aes(x = Generation, y = Phenotype, group = Replicate)) +
+  geom_smooth(method = "lm") + geom_point() +
+  facet_grid(Environment ~ Trait)
