@@ -123,7 +123,7 @@ do et=1,etmax                                                           ! evolut
        end do
        do i=1,ind(1)%ngs
          write(7000,*)ind(pp)%ww(i,:)
-<<<<<<< HEAD
+
        end do
        do j=1,n
             do i=1,PD                                                                 ! PD, ind(i)%ncels)
@@ -131,15 +131,6 @@ do et=1,etmax                                                           ! evolut
                call flush(20067)                                                      ! Fitnesses and phenotypes in the general file ...
             end do
          end do
-=======
-       end do       
-       do j=1,n  
-         do i=1,PD                                                                ! PD,ind(i)%ncels)         
-           write(20067,*)replica,et,pp,j,i,ind(pp)%phen(1:2,j),ind(pp)%fitness(1) ! Fitnesses and phenotypes in the general file ...    
-           call flush(20067)                                                      ! Fitnesses and phenotypes in the general file ... 
-         end do     
-       end do  
->>>>>>> 55baed62da8cfd39c78ae723203532e30f8134dd
      end do
      do i=1,ind(1)%ngs
        write(7000,*)ind(1)%MZ(i,:)
