@@ -2,14 +2,18 @@
 library(plyr)
 
 # Select which simulation to load
-simulDir <- "./files/20181018_SimTest1/"
-simulID <- "PHEN_"
-simulFiles <- list.files(path = simulDir, pattern = simulID)
-simulFiles
+simulDir <- "../../Simulation_results/20190109/"
+simulID <- c("PHEN_TR","PHEN_TE")
+simulFiles <- lapply(X = simulID, FUN = function(x){list.files(path = simulDir, pattern = simulID)})
+simulFiles <- lapply(simulFiles, FUN = function(x){file.path(simulDir, x)})
+names(simulFiles) <- c("TR","TE")
 
 # Import all simulation to single data.frame
-simulData <- ldply(lapply(X = file.path(simulDir, simulFiles), read.table))
-names(simulData) <- c("Replicate", "Generation", "Individual", "Environment", "Trait", "Phenotype", "Fitness")
+simulData <- lapply(simulFiles, FUN = function(x){
+  ldply(.data = x, .fun = read.table)
+})
+simulData <- ldply(simulData)
+names(simulData) <- c("Training", "Replicate", "Generation", "Individual", "Environment", "Trait", "Phenotype", "Fitness")
 
 head(simulData)
 summary(simulData)
