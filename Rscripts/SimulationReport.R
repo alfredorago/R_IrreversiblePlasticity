@@ -2,9 +2,10 @@
 library(plyr)
 
 # Select which simulation to load
+# Currently loads entire directory, separating training and test by suffix
 simulDir <- "../../Simulation_results/20190109/"
-simulID <- c("PHEN_TR","PHEN_TE")
-simulFiles <- lapply(X = simulID, FUN = function(x){list.files(path = simulDir, pattern = simulID)})
+simulID <- c("PHEN_TR", "PHEN_TE")
+simulFiles <- lapply(X = simulID, FUN = function(x){list.files(path = simulDir, pattern = x)})
 simulFiles <- lapply(simulFiles, FUN = function(x){file.path(simulDir, x)})
 names(simulFiles) <- c("TR","TE")
 
