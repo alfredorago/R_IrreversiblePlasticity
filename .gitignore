@@ -1,7 +1,7 @@
-*.mod
-*.dat
-*.e
+# Ignore R history and local cache
 *.Rproj*
-
 \.Rhistory
 .Rproj.user
+
+# Ignore binary graphics outputs
+Graphics/
