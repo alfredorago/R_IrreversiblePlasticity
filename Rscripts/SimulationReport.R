@@ -3,7 +3,7 @@ library(plyr)
 
 # Select which simulation to load
 # Currently loads entire directory, separating training and test by suffix
-simulDir <- "../../Simulation_results/20190109/"
+simulDir <- "../../Simulation_results/20190215/Homeostat_POP_hiSS/"
 simulID <- c("PHEN_TR", "PHEN_TE")
 simulFiles <- lapply(X = simulID, FUN = function(x){list.files(path = simulDir, pattern = x)})
 simulFiles <- lapply(simulFiles, FUN = function(x){file.path(simulDir, x)})
@@ -16,6 +16,8 @@ simulData <- lapply(simulFiles, FUN = function(x){
 simulData <- ldply(simulData)
 names(simulData) <- c("Training", "Replicate", "Generation", "Individual", "Environment", "Trait", "Phenotype", "Fitness")
 
+simulData[,c(1:2,4:6)] <- lapply(simulData[,c(1:2,4:6)], factor)
+
 head(simulData)
 summary(simulData)
 
@@ -26,14 +28,16 @@ graphdir<-file.path(getwd(), "Graphics", "SimulationReport")
 dir.create(graphdir, recursive = T)
 
 # Visualize fitness over time
-ggplot(data = simulData, mapping = aes(x = as.factor(Generation), y = Fitness)) +
-  geom_boxplot() +
-  facet_grid(Replicate ~ Environment) 
+ggplot(data = simulData[which(simulData$Generation!=1),],
+  mapping = aes(x = Generation, y = Fitness)) +
+  geom_violin(aes(group = as.factor(Generation))) +
+  facet_wrap(~Replicate) +
+  ylim(c(0, max(simulData$Fitness)))
 ggsave(filename = file.path(graphdir, "FitnessOverTime.pdf"), device = 'pdf')
 
 # Visualize phenotypes over time
-ggplot(data = simulData, mapping = aes(x = as.factor(Generation), y = Phenotype)) +
-  geom_boxplot() +
+ggplot(data = simulData, mapping = aes(x = Generation, y = Phenotype)) +
+  geom_violin(aes(group = as.factor(Generation))) +
   facet_grid(Replicate ~ Environment + Trait)
 ggsave(filename = file.path(graphdir, "PhenotypesOverTime.pdf"), device = 'pdf')
 
@@ -45,21 +49,37 @@ multiData$Trait = as.factor(
 )
 multiData = melt(
   multiData, 
-  id.vars = c("Replicate", "Generation", "Individual", "Environment", "Trait", "Fitness"))
+  id.vars = c("Training", "Replicate", "Generation", "Individual", "Environment", "Trait", "Fitness"))
 multiData = dcast(
   multiData, 
-  formula = Replicate + Generation + Individual + Environment + Fitness ~ Trait)
+  formula = Training + Replicate + Generation + Individual + Environment + Fitness ~ Trait)
 
 head(multiData)
 
 ggplot(
   data = multiData, 
-  mapping = aes(x = Trait_1, y = Trait_2)
+  mapping = aes(x = Trait_1, y = Trait_2, col = as.factor(Environment))
 ) +
-  geom_hex() + 
-  scale_fill_gradient(trans = 'log') +
-  facet_grid(Replicate + Environment ~ Generation)
+  geom_point() + 
+  facet_grid(Generation ~ Replicate)
 ggsave(filename = file.path(graphdir, "2D_evolution.pdf"), device = "pdf", width = 14, height = 10)
+
+# Animate
+library(gganimate)
+
+HC_anim <- ggplot(
+  data = multiData, 
+  mapping = aes(x = Trait_1, y = Trait_2, col = as.factor(Environment))
+) +
+  geom_point() +
+  facet_wrap(~Replicate) +
+  transition_time(Generation) +
+  ease_aes('linear') +
+  labs(title = "Generation: 'Generation'", x = "Trait 1", y = "Trait 2", col = "Environment") 
+
+animate(HC_anim, duration = 20, fps = 24, rewind = T, width = 500, height = 400, res = 120)
+
+anim_save(filename = "Homeostat2.gif", path = graphdir)
 
 # Draw population ellipsoids
 ggplot(
