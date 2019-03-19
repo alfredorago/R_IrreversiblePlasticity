@@ -15,7 +15,7 @@ dir.create(graphdir)
 a4 = c(201, 297)
 
 ## Import simulation results
-ResultDirs <- list.dirs(path = "../../Simulation_results/20190318", full.names = T)[-1]
+ResultDirs <- list.dirs(path = "../Simulation_results/20190319", full.names = T)[-1]
 
 # For each folder, compile all replicates in a single data.frame within a list
 Phenotypes <- lapply(ResultDirs, function(x){
