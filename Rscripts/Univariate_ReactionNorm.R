@@ -14,8 +14,10 @@ develop <- function(cues, epigen, grn, devtime, mzmat){
   sapply(cues, function(c){
     for (i in 1:devtime) {
       epigen[1] <- (c + epigen[1])/2
+      epigen[which(epigen<0)] <- 0
       epigen <- epigen %*% grn
       epigen <- activation(epigen)
+      epigen[which(epigen<0)] <- 0
     }
     epigen
   }
