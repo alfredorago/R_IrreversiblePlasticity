@@ -3,6 +3,7 @@
 ### Import library and define functions
 library(tidyr)
 library(plyr)
+library(ggplot2)
 activation <- function(x){
   y <- tanh(x)
   y <- (y+1)/2
@@ -63,3 +64,9 @@ phenotypes <- lapply(phenotypes, function(x){
 }) %>% ldply()
 colnames(phenotypes) <-c("Replicate", "Value", "Cue")
 phenotypes$Cue <- as.numeric(phenotypes$Cue)
+
+
+## Plot final reaction norms
+ggplot(data = phenotypes, mapping = aes(x = Cue, y = Value, group = Replicate)) +
+  geom_line(aes(alpha=0.5))
+
