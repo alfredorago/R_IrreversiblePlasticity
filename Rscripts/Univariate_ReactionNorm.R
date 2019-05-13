@@ -29,7 +29,15 @@ develop <- function(cues, epigen, grn, devtime, mzmat){
   matrix() %>% data.frame(row.names = round(cues, digits = 2))
 }
 
-### Functional test for development with pre-set parameters
+# ### Functional test for development with pre-set parameters
+# devtime1 <- 20
+# cues1 <- seq(1, -1, length.out = 10)/2
+# grn1 <- matrix(nrow = 4, data = c(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1))
+# epigen1 <- rep(0.5, ncol(grn1))
+# mzmat1 <- matrix(data = rep(1, nrow(grn1)), nrow = 1)
+# develop(cues1, epigen1, grn1, devtime1, mzmat1)
+
+### Define global parameter values
 devtime1 <- 20
 cues1    <- seq(1, -1, length.out = 100)
 ngenes   <- 4
@@ -44,3 +52,14 @@ GRNs <- lapply(GRN_files, function(x){
 })
 names(GRNs) = str_extract(GRN_files, pattern = "R.[0-9]{1,}")
 
+
+## Develop GRNs and store results in data.frame w one row per individual/repliate and one col per environment
+phenotypes <- lapply(GRNs, function(x){
+  develop(cues = cues1, epigen = epigen1, grn = x, devtime = devtime1, mzmat = mzmat1)
+})
+phenotypes <- lapply(phenotypes, function(x){
+  x$cues <- row.names(x)
+  x
+}) %>% ldply()
+colnames(phenotypes) <-c("Replicate", "Value", "Cue")
+phenotypes$Cue <- as.numeric(phenotypes$Cue)
