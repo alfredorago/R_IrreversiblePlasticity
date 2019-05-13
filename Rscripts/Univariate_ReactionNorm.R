@@ -40,7 +40,7 @@ develop <- function(cues, epigen, grn, devtime, mzmat){
 
 ### Define global parameter values
 devtime1 <- 20
-cues1    <- seq(1, -1, length.out = 100)
+cues1    <- seq(0.5, -0.5, length.out = 100)
 ngenes   <- 4
 epigen1  <- rep(0.5, ngenes)
 mzmat1  <- rep(1/ngenes, ngenes) %>% matrix(nrow = 1)
@@ -65,8 +65,15 @@ phenotypes <- lapply(phenotypes, function(x){
 colnames(phenotypes) <-c("Replicate", "Value", "Cue")
 phenotypes$Cue <- as.numeric(phenotypes$Cue)
 
+## Import cue/target pairs for plotting
+# Data are contained in lines 1 (targets) and 13 (cues)
+problem = read.fwf(file = GRN_files[[1]], widths = c(31, 13, 17, 17, 17, 17, 17), n = 13)[c(13,1),]
+problem = as.data.frame(t(problem[,-1]))
+colnames(problem) <- c("Cue", "Value")
+problem$Replicate <- NA
 
 ## Plot final reaction norms
 ggplot(data = phenotypes, mapping = aes(x = Cue, y = Value, group = Replicate)) +
-  geom_line(aes(alpha=0.5))
+  geom_line(aes(alpha=0.5)) +
+  geom_point(data = problem, mapping = aes(x=Cue, y=Value))
 
