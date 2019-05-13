@@ -2,6 +2,7 @@
 
 ### Import library and define functions
 library(tidyr)
+library(plyr)
 activation <- function(x){
   y <- tanh(x)
   y <- (y+1)/2
@@ -30,15 +31,16 @@ develop <- function(cues, epigen, grn, devtime, mzmat){
 
 ### Functional test for development with pre-set parameters
 devtime1 <- 20
-cues1    <- seq(1, -1, 100)
+cues1    <- seq(1, -1, length.out = 100)
 ngenes   <- 4
 epigen1  <- rep(0.5, ngenes)
-mzmat    <- rep(1/ngenes, ngenes) %>% matrix(ncol = 1)
+mzmat1  <- rep(1/ngenes, ngenes) %>% matrix(nrow = 1)
 
 ### Import gene networks
-GRNs <- list.files(path = "../Simulation_results/20190513/Training_Problem_A", pattern = "GRN*", full.names = T)
+GRN_files <- list.files(path = "../Simulation_results/20190513/Training_Problem_A", pattern = "GRN*", full.names = T)
 # Extract weights for the first individual of each file, and store in list of lists (each file is nested within its simulation)
-Weights <- lapply(GRNs, function(x){
+GRNs <- lapply(GRN_files, function(x){
     scan(file=x, what=numeric(), skip=13, n=ngenes^2) %>% matrix(nrow = ngenes)
 })
-names(Weights) = str_extract(ResultDirs, pattern = "R[0-9]{2}")
+names(GRNs) = str_extract(GRN_files, pattern = "R.[0-9]{1,}")
+
