@@ -30,8 +30,15 @@ develop <- function(cues, epigen, grn, devtime, mzmat){
 
 ### Functional test for development with pre-set parameters
 devtime1 <- 20
-cues1 <- seq(1, -1, length.out = 10)/2
-grn1 <- matrix(nrow = 4, data = c(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1))
-epigen1 <- rep(0.5, ncol(grn1))
-mzmat <- matrix(data = rep(1, nrow(grn1)), nrow = 1)
-develop(cues1, epigen1, grn1, devtime1, mzmat)
+cues1    <- seq(1, -1, 100)
+ngenes   <- 4
+epigen1  <- rep(0.5, ngenes)
+mzmat    <- rep(1/ngenes, ngenes) %>% matrix(ncol = 1)
+
+### Import gene networks
+GRNs <- list.files(path = "../Simulation_results/20190513/Training_Problem_A", pattern = "GRN*", full.names = T)
+# Extract weights for the first individual of each file, and store in list of lists (each file is nested within its simulation)
+Weights <- lapply(GRNs, function(x){
+    scan(file=x, what=numeric(), skip=13, n=ngenes^2) %>% matrix(nrow = ngenes)
+})
+names(Weights) = str_extract(ResultDirs, pattern = "R[0-9]{2}")
