@@ -48,7 +48,8 @@ epigen1  <- rep(0.5, ngenes)
 mzmat1  <- rep(1/ngenes, ngenes) %>% matrix(nrow = 1)
 
 ### Import gene networks
-GRN_files <- list.files(path = "../Simulation_results/20190521/ProblemAB/", pattern = "GRN*", full.names = T)
+GRN_path <- file.path("../Simulation_results/20190521/ProblemBB/")
+GRN_files <- list.files(path = GRN_path, pattern = "GRN*", full.names = T)
 # Extract weights for the first individual of each file, and store in list of lists (each file is nested within its simulation)
 GRNs <- lapply(GRN_files, function(x){
     scan(file=x, what=numeric(), skip=13, n=ngenes^2) %>% matrix(nrow = ngenes)
@@ -78,5 +79,9 @@ problem$Replicate <- NA
 ## Plot final reaction norms
 ggplot(data = phenotypes, mapping = aes(x = Cue, y = Value, group = Replicate)) +
   geom_line(aes(alpha=0.5)) +
-  geom_point(data = problem, mapping = aes(x=Cue, y=Value))
+  geom_point(data = problem, mapping = aes(x=Cue, y=Value)) +
+  ggtitle(basename(GRN_path))
 
+ggsave(
+  filename = file.path(GRN_path, paste0(basename(GRN_path), '.pdf')), 
+  device = "pdf")
