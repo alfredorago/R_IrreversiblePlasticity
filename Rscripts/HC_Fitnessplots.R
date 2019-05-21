@@ -47,8 +47,13 @@ testPhenoData$Generation <- testPhenoData$Generation+max(trainPhenoData$Generati
 PhenoData <- rbind(trainPhenoData, testPhenoData)
 PhenoData$Group <- factor(paste0(PhenoData$.id, PhenoData$Replicate))
 
+## Filter only one individual per simulation per time point
+PhenoData <- PhenoData[which(PhenoData$Individual==1),]
+PhenoData <- PhenoData[,c(".id", "Replicate", "Generation", "Fitness", "training", "problem1", "problem2", "Group")]
+PhenoData <- unique(PhenoData)
 ## Plot
 ggplot(data = PhenoData, 
   mapping = aes(x = Generation, y = Fitness, col = problem2, group = Group)) +
   geom_line() +
   facet_grid(.~problem1)
+ggsave(filename = file.path(simulDir, "fitness.pdf"))
