@@ -4,6 +4,7 @@
 library(tidyr)
 library(plyr)
 library(ggplot2)
+library(stringr)
 activation <- function(x){
   y <- tanh(x)
   y <- (y+1)/2
