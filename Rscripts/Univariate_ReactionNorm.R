@@ -16,10 +16,11 @@ develop <- function(cues, epigen, grn, devtime, mzmat){
   # For every cue in our range, iterate hidden layer
   sapply(cues, function(c){
     for (i in 1:devtime) {
-      epigen[1] <- (c + epigen[1])/2
-      epigen[which(epigen<0)] <- 0
-      epigen <- epigen %*% grn
-      epigen <- activation(epigen)
+      transient <- epigen
+      transient[1] <- (c + transient[1])/2
+      transient[2:length(transient)] <- transient[2:length(transient)]/2
+      transient <- transient %*% grn
+      epigen <- activation(epigen + transient)
       epigen[which(epigen<0)] <- 0
     }
     epigen
