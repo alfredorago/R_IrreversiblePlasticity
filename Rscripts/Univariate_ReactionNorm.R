@@ -48,13 +48,14 @@ epigen1  <- rep(0.5, ngenes)
 mzmat1  <- rep(1/ngenes, ngenes) %>% matrix(nrow = 1)
 
 ### Import gene networks
-GRN_files <- list.files(path = "../Simulation_results/20190513/Training_Problem_A", pattern = "GRN*", full.names = T)
+GRN_files <- list.files(path = "../Simulation_results/20190521/ProblemAB/", pattern = "GRN*", full.names = T)
 # Extract weights for the first individual of each file, and store in list of lists (each file is nested within its simulation)
 GRNs <- lapply(GRN_files, function(x){
     scan(file=x, what=numeric(), skip=13, n=ngenes^2) %>% matrix(nrow = ngenes)
 })
-names(GRNs) = str_extract(GRN_files, pattern = "R.[0-9]{1,}")
-
+ReplicateID = str_extract_all(GRN_files, pattern = "R.[0-9]{1,}")
+ReplicateID = sapply(ReplicateID, function(x){x[length(x)]})
+names(GRNs) = ReplicateID
 
 ## Develop GRNs and store results in data.frame w one row per individual/repliate and one col per environment
 phenotypes <- lapply(GRNs, function(x){
