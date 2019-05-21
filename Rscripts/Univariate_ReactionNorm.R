@@ -12,7 +12,7 @@ activation <- function(x){
 }
 
 ### Define development
-develop <- function(cues, epigen, grn, devtime, mzmat){
+develop <- function(cues, epigen, grn, devtime, mzmat, linear){
   # For every cue in our range, iterate hidden layer
   sapply(cues, function(c){
     for (i in 1:devtime) {
@@ -20,7 +20,10 @@ develop <- function(cues, epigen, grn, devtime, mzmat){
       transient[1] <- (c + transient[1])/2
       transient[2:length(transient)] <- transient[2:length(transient)]/2
       transient <- transient %*% grn
-      epigen <- activation(epigen + transient)
+      epigen <- epigen + transient
+      if (linear!=1){
+        epigen <- activation(epigen)
+      } 
       epigen[which(epigen<0)] <- 0
     }
     epigen
@@ -46,9 +49,10 @@ cues1    <- seq(0.5, -0.5, length.out = 100)
 ngenes   <- 4
 epigen1  <- rep(0.5, ngenes)
 mzmat1  <- rep(1/ngenes, ngenes) %>% matrix(nrow = 1)
+linear1 <- 1
 
 ### Import gene networks
-GRN_path <- file.path("../Simulation_results/20190521/ProblemBB/")
+GRN_path <- file.path("../Simulation_results/20190521/linear/BA")
 GRN_files <- list.files(path = GRN_path, pattern = "GRN*", full.names = T)
 # Extract weights for the first individual of each file, and store in list of lists (each file is nested within its simulation)
 GRNs <- lapply(GRN_files, function(x){
@@ -60,7 +64,7 @@ names(GRNs) = ReplicateID
 
 ## Develop GRNs and store results in data.frame w one row per individual/repliate and one col per environment
 phenotypes <- lapply(GRNs, function(x){
-  develop(cues = cues1, epigen = epigen1, grn = x, devtime = devtime1, mzmat = mzmat1)
+  develop(cues = cues1, epigen = epigen1, grn = x, devtime = devtime1, mzmat = mzmat1, linear = linear1)
 })
 phenotypes <- lapply(phenotypes, function(x){
   x$cues <- row.names(x)
