@@ -23,8 +23,9 @@ develop <- function(cues, epigen, grn, devtime, mzmat, linear){
       epigen <- epigen + transient
       if (linear!=1){
         epigen <- activation(epigen)
+        epigen[which(epigen<0)] <- 0
       } 
-      epigen[which(epigen<0)] <- 0
+
     }
     epigen
   }
