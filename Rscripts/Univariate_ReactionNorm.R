@@ -23,7 +23,8 @@ develop <- function(cues, epigen, grn, devtime, mzmat, linear){
       epigen <- epigen + transient
       if (linear!=1){
         epigen <- activation(epigen)
-        epigen[which(epigen<0)] <- 0
+        if(any(epigen<0)) 
+          print("Error: Negative Concentrations")
       } 
 
     }
@@ -36,24 +37,16 @@ develop <- function(cues, epigen, grn, devtime, mzmat, linear){
   matrix() %>% data.frame(row.names = round(cues, digits = 2))
 }
 
-# ### Functional test for development with pre-set parameters
-# devtime1 <- 20
-# cues1 <- seq(1, -1, length.out = 10)/2
-# grn1 <- matrix(nrow = 4, data = c(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1))
-# epigen1 <- rep(0.5, ncol(grn1))
-# mzmat1 <- matrix(data = rep(1, nrow(grn1)), nrow = 1)
-# develop(cues1, epigen1, grn1, devtime1, mzmat1)
-
 ### Define global parameter values
 devtime1 <- 20
 cues1    <- seq(0.5, -0.5, length.out = 100)
 ngenes   <- 4
 epigen1  <- rep(0.5, ngenes)
 mzmat1  <- rep(1/ngenes, ngenes) %>% matrix(nrow = 1)
-linear1 <- 1
+linear1 <- 0
 
 ### Import gene networks
-GRN_path <- file.path("../Simulation_results/20190521/linear/BA")
+GRN_path <- file.path("../Simulation_results/20190524/E0/")
 GRN_files <- list.files(path = GRN_path, pattern = "GRN*", full.names = T)
 # Extract weights for the first individual of each file, and store in list of lists (each file is nested within its simulation)
 GRNs <- lapply(GRN_files, function(x){
@@ -61,7 +54,9 @@ GRNs <- lapply(GRN_files, function(x){
 })
 ReplicateID = str_extract_all(GRN_files, pattern = "R.[0-9]{1,}")
 ReplicateID = sapply(ReplicateID, function(x){x[length(x)]})
-names(GRNs) = ReplicateID
+Timepoint = str_extract_all(GRN_files, pattern = "T[0-9]{2}")
+Timepoint = sapply(Timepoint, function(x){x[length(x)]})
+names(GRNs) = paste(ReplicateID, Timepoint, sep = "_")
 
 ## Develop GRNs and store results in data.frame w one row per individual/repliate and one col per environment
 phenotypes <- lapply(GRNs, function(x){
@@ -71,7 +66,10 @@ phenotypes <- lapply(phenotypes, function(x){
   x$cues <- row.names(x)
   x
 }) %>% ldply()
-colnames(phenotypes) <-c("Replicate", "Value", "Cue")
+colnames(phenotypes) <-c("ID", "Value", "Cue")
+phenotypes$Replicate <- as.numeric(str_extract(phenotypes$ID, pattern = "(?<=R_)[0-9]{1,2}"))
+phenotypes$Timepoint <- as.numeric(str_extract(phenotypes$ID, pattern = "(?<=T)[0-9]{2}"))
+#phenotypes$ID <- factor(phenotypes$ID, levels = c(unique(phenotypes$ID), "problem"))
 phenotypes$Cue <- as.numeric(phenotypes$Cue)
 
 ## Import cue/target pairs for plotting
@@ -79,13 +77,17 @@ phenotypes$Cue <- as.numeric(phenotypes$Cue)
 problem = read.fwf(file = GRN_files[[1]], widths = c(31, 13, 17, 17, 17, 17, 17), n = 13)[c(13,1),]
 problem = as.data.frame(t(problem[,-1]))
 colnames(problem) <- c("Cue", "Value")
-problem$Replicate <- NA
+problem$ID <- "p"
+problem$Replicate <- 0
+problem$Timepoint <- -1
 
 ## Plot final reaction norms
-ggplot(data = phenotypes, mapping = aes(x = Cue, y = Value, group = Replicate)) +
+ggplot(data = phenotypes, mapping = aes(x = Cue, y = Value, group = ID, col = Timepoint)) +
   geom_line(aes(alpha=0.5)) +
   geom_point(data = problem, mapping = aes(x=Cue, y=Value)) +
-  ggtitle(basename(GRN_path))
+  ggtitle(basename(GRN_path)) +
+  ylim(c(0,1)) +
+  scale_color_viridis_c()
 
 ggsave(
   filename = file.path(GRN_path, paste0(basename(GRN_path), '.pdf')), 
