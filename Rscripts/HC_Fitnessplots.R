@@ -33,9 +33,9 @@
   trainPhenoData <- ldply(trainPhenoList)
   trainPhenoData$Training <- factor(x = rep(1, nrow(trainPhenoData)), levels = c(0,1))
   trainPhenoData$Problem1 <- factor(x = str_extract(string = trainPhenoData$.id, pattern = "^."), 
-    levels = c("A","B","D","E", "F", "N"))
+    levels = c("0" ,"A" ,"B" ,"D", "E", "F", "N"))
   trainPhenoData$Problem2 <- factor(x = str_extract(string = trainPhenoData$.id, pattern = "(?<=^[A-Z])."), 
-    levels = c("0","A","B","D", "E", "F", "N") )
+    levels = c("0" ,"A" ,"B" ,"D", "E", "F", "N") )
   trainPhenoData$Source <- factor(str_extract(string = trainPhenoData$.id, pattern = "(?<=_)R[0-9]{1,2}"))
   
   ## Import and annotate phenotype files from test simulations
@@ -64,9 +64,9 @@
   testPhenoData <- ldply(testPhenoList)
   testPhenoData$Training <- factor(x = rep(0, nrow(trainPhenoData)), levels = c(0,1))
   testPhenoData$Problem1 <- factor(x = str_extract(string = testPhenoData$.id, pattern = "^."), 
-    levels = c("A","B","D","E", "F", "N"))
+    levels = c("0", "A","B", "D", "E", "F", "N"))
   testPhenoData$Problem2 <- factor(x = str_extract(string = testPhenoData$.id, pattern = "(?<=^[A-Z])."), 
-    levels = c("0","A","B","D", "E", "F", "N") )
+    levels = c("0", "A","B", "D", "E", "F", "N") )
   testPhenoData$Source <- factor(str_extract(string = testPhenoData$.id, pattern = "(?<=_)R[0-9]{1,2}"))
   # Warning, code below assumes same number of generations for each test run
   testPhenoData$Generation <- testPhenoData$Generation+max(trainPhenoData$Generation)
@@ -78,8 +78,11 @@
   ## Filter only one individual per simulation per time point
   PhenoData <- PhenoData[which(PhenoData$Individual==1 & PhenoData$Environment==1),]
   PhenoData <- PhenoData[,c(".id", "Replicate", "Generation", "Fitness", "Training", "Problem1", "Problem2", "Source")]
-  PhenoData$Group <- factor(paste0(PhenoData$.id, PhenoData$Replicate, PhenoData$Source))
   PhenoData <- PhenoData[which(duplicated(PhenoData[,c("Replicate", "Generation", "Training", "Problem1", "Problem2", "Source")])==FALSE),]
+  
+  # Annotate initial training with appropriate problem
+  PhenoData$Problem2[which(PhenoData$Problem2=='0')] <- PhenoData$Problem1[which(PhenoData$Problem2=='0')]
+  
   
   
   ## Main test plot: mostly useful to see all data is here and formatted correctly
