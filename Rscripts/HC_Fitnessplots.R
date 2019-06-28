@@ -109,4 +109,57 @@
     geom_line() + 
     facet_wrap(Problem1~.) +
     scale_color_brewer(type = "qual", palette = 3) 
+  ggsave(filename = file.path(simulDir, "Fig1_FitnessABBA.pdf"))
+
+  ## Plot 2: Test set on new step function (F)  
+  ## Need to run FF simulations
+  dataPlot1 <- PhenoData[grep(pattern = "^[A,B,N,F][0,F]", x = PhenoData$.id),]
+  ggplot(
+    data = dataPlot1, 
+    mapping = aes(
+      x = Generation,
+      y = Fitness,
+      col = Problem2,
+      group = .id)
+  ) +
+    geom_point() + 
+    geom_line() + 
+    facet_wrap(Problem1~.) +
+    scale_color_brewer(type = "qual", palette = 3) 
+  ggsave(filename = file.path(simulDir, "Fig2_FitnessF.pdf"))
+  
+  
+  ## Plot 3: Complex to linear, can improve but only if also congruent with biases
+  ## Need D0 to DD 
+  dataPlot1 <- PhenoData[grep(pattern = "^[A,B,N][0,D]", x = PhenoData$.id),]
+  ggplot(
+    data = dataPlot1, 
+    mapping = aes(
+      x = Generation,
+      y = Fitness,
+      col = Problem2,
+      group = .id)
+  ) +
+    geom_point() + 
+    geom_line() + 
+    facet_wrap(Problem1~.) +
+    scale_color_brewer(type = "qual", palette = 3) 
+  ggsave(filename = file.path(simulDir, "Fig3_Fitness_complextolinear.pdf"))
+  
+  ## Plot 4: linear to linear
+  # Needs NE/ND
+  dataPlot1 <- PhenoData[grep(pattern = "^[D,E][0,E,D]", x = PhenoData$.id),]
+  ggplot(
+    data = dataPlot1, 
+    mapping = aes(
+      x = Generation,
+      y = Fitness,
+      col = Problem2,
+      group = .id)
+  ) +
+    geom_point() + 
+    geom_line() + 
+    facet_wrap(Problem1~.) +
+    scale_color_brewer(type = "qual", palette = 3) 
+  ggsave(filename = file.path(simulDir, "Fig4_Fitness_lineartolinear.pdf"))
   
