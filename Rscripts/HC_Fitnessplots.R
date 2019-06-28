@@ -82,10 +82,28 @@
   PhenoData <- PhenoData[which(duplicated(PhenoData[,c("Replicate", "Generation", "Training", "Problem1", "Problem2", "Source")])==FALSE),]
   
   
-  ## Plot 1:
+  ## Main test plot: mostly useful to see all data is here and formatted correctly
   ggplot(data = PhenoData, 
     mapping = aes(x = Generation, y = Fitness, col = Problem2, group = .id)) +
     geom_line() + geom_point() + 
     facet_wrap(Problem1~.) +
     scale_color_brewer(type = 'qual', palette = 3)
   ggsave(filename = file.path(simulDir, "fitness.pdf"))
+
+  ## Plot1: Compare AB, BA and NA/NB
+  # This plot shows that plasticity makes evolution irreversible
+  # Consider adding problem F to show that new step functions can evolve 
+  dataPlot1 <- PhenoData[grep(pattern = "^[A,B,N][0,A,B]", x = PhenoData$.id),]
+  ggplot(
+    data = dataPlot1, 
+    mapping = aes(
+      x = Generation,
+      y = Fitness,
+      col = Problem2,
+      group = .id)
+  ) +
+    geom_point() + 
+    geom_line() + 
+    facet_wrap(Problem1~.) +
+    scale_color_brewer(type = "qual", palette = 3) 
+  
