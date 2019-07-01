@@ -47,8 +47,8 @@ mzmat1  <- rep(1/ngenes, ngenes) %>% matrix(nrow = 1)
 linear1 <- 0
 
 ### Import gene networks
-
-GRN_path <- file.path("../Simulation_results/20190626/") %>% list.dirs(full.names = T)
+GRN_maindir <- file.path("../Simulation_results/20190626/")
+GRN_path <- GRN_maindir %>% list.dirs(full.names = T)
 GRN_files <- list.files(path = GRN_path, pattern = "GRN*", full.names = T)
 # Extract weights for the first individual of each file, and store in list of lists (each file is nested within its simulation)
 # This step requires ~6 seconds
@@ -86,6 +86,7 @@ phenotype_annotation <- str_extract_all(string = phenotypes$ID, pattern = "[A-Z,
 colnames(phenotype_annotation) <- c("Problem", "Source", "Replicate", "Timepoint")
 phenotype_annotation$Training <- factor(str_extract(string = phenotype_annotation$Problem, pattern = "^."))
 phenotype_annotation$Test <- factor(str_extract(string = phenotype_annotation$Problem, pattern = ".$"))
+phenotype_annotation$Timepoint <- as.numeric(str_extract(string = phenotype_annotation$Timepoint, pattern = "[0-9]."))
 
 phenotypes <- cbind(phenotype_annotation, phenotypes)
 
@@ -93,8 +94,6 @@ phenotypes$Cue <- as.numeric(phenotypes$Cue)
 
 ## Import cue/target pairs for plotting
 # Data are contained in lines 1 (targets) and 13 (cues)
-
-# TODO: Expand data.frame to include all problems in the set
 
 problem <- lapply(X = GRN_files, FUN = function(x){
   read.fwf(x, widths = c(31, 13, 17, 17, 17, 17, 17), n = 13)[c(13,1),-1] %>%
@@ -122,5 +121,21 @@ ggplot(data = phenotypes, mapping = aes(x = Cue, y = Value, group = ID)) +
   geom_point(data = problem, mapping = aes(group = NA)) 
 
 ggsave(
-  filename = file.path(GRN_path, paste0(basename(GRN_path), '.pdf')), 
+  filename = file.path(GRN_maindir, "ReactionNormMatrix.pdf"), 
+  device = "pdf", width = 300, height = 300, units = "mm")
+
+# Fig 1: RN ABBA
+dataplot <- phenotypes[which(phenotypes$Training%in%c('A','B','N') & phenotypes$Test%in%(c('0','A','B','N'))),]
+problemplot <- problem[which(problem$Training%in%c('A','B','N') & problem$Test%in%(c('0','A','B','N'))),]
+
+ggplot(data = dataplot, mapping = aes(x = Cue, y = Value, group = ID, col = Timepoint)) +
+  geom_line() +
+  ylim(c(0,1)) +
+  facet_grid(Training~Test, switch = 'y') +
+  geom_point(data = problemplot, mapping = aes(group = NA, col = -10)) +
+  scale_colour_distiller(type = 'div', palette = 1) +
+  theme_light()
+
+ggsave(
+  filename = file.path(GRN_maindir, "RN_ABBA.pdf"), 
   device = "pdf", width = 297, height = 210, units = "mm")
