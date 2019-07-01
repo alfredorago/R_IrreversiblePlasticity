@@ -139,3 +139,51 @@ ggplot(data = dataplot, mapping = aes(x = Cue, y = Value, group = ID, col = Time
 ggsave(
   filename = file.path(GRN_maindir, "RN_ABBA.pdf"), 
   device = "pdf", width = 297, height = 210, units = "mm")
+
+# Fig 2: RN ABFN, shows that plasticity is not a dead end but can learn similar functions
+dataplot <- phenotypes[which(phenotypes$Training%in%c('A','B','N','F') & phenotypes$Test%in%(c('0','F'))),]
+problemplot <- problem[which(problem$Training%in%c('A','B','N', 'F') & problem$Test%in%(c('0','F'))),]
+
+ggplot(data = dataplot, mapping = aes(x = Cue, y = Value, group = ID, col = Timepoint)) +
+  geom_line() +
+  ylim(c(0,1)) +
+  facet_grid(Training~Test, switch = 'y') +
+  geom_point(data = problemplot, mapping = aes(group = NA, col = -10)) +
+  scale_colour_distiller(type = 'div', palette = 1) +
+  theme_light()
+
+ggsave(
+  filename = file.path(GRN_maindir, "RN_ABFN.pdf"), 
+  device = "pdf", width = 297, height = 210, units = "mm")
+
+# Fig 3: RN ABDN, shows that complex to simple transitions constrain adaptation
+dataplot <- phenotypes[which(phenotypes$Training%in%c('A','B','N','D') & phenotypes$Test%in%(c('0','D'))),]
+problemplot <- problem[which(problem$Training%in%c('A','B','N', 'D') & problem$Test%in%(c('0','D'))),]
+
+ggplot(data = dataplot, mapping = aes(x = Cue, y = Value, group = ID, col = Timepoint)) +
+  geom_line() +
+  ylim(c(0,1)) +
+  facet_grid(Training~Test, switch = 'y') +
+  geom_point(data = problemplot, mapping = aes(group = NA, col = -10)) +
+  scale_colour_distiller(type = 'div', palette = 1) +
+  theme_light()
+
+ggsave(
+  filename = file.path(GRN_maindir, "RN_ABFD.pdf"), 
+  device = "pdf", width = 297, height = 210, units = "mm")
+
+# Fig 3: RN EDDE, shows that even simple to simple transitions cause constraint (might want to add simple to complex)
+dataplot <- phenotypes[which(phenotypes$Training%in%c('E','D') & phenotypes$Test%in%(c('0','D','E'))),]
+problemplot <- problem[which(problem$Training%in%c('E','D') & problem$Test%in%(c('0','D','E'))),]
+
+ggplot(data = dataplot, mapping = aes(x = Cue, y = Value, group = ID, col = Timepoint)) +
+  geom_line() +
+  ylim(c(0,1)) +
+  facet_grid(Training~Test, switch = 'y') +
+  geom_point(data = problemplot, mapping = aes(group = NA, col = -10)) +
+  scale_colour_distiller(type = 'div', palette = 1) +
+  theme_light()
+
+ggsave(
+  filename = file.path(GRN_maindir, "RN_EDDE.pdf"), 
+  device = "pdf", width = 297, height = 210, units = "mm")
