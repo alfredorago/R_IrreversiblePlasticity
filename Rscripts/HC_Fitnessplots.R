@@ -108,8 +108,13 @@
     geom_point() + 
     geom_line() + 
     facet_wrap(Problem1~.) +
-    scale_color_brewer(type = "qual", palette = 3) 
-  ggsave(filename = file.path(simulDir, "Fig1_FitnessABBA.pdf"))
+    scale_color_brewer(type = "qual", palette = 3) +
+    theme_linedraw() + 
+    theme(panel.grid = element_blank(), panel.border = element_blank()) 
+  
+  ggsave(filename = file.path(simulDir, "Fig1_FitnessABBA.pdf"),
+    device = "pdf", width = 297, height = 210, units = "mm"  
+  )
 
   ## Plot 2: Test set on new step function (F)  
   ## Need to run FF simulations
@@ -125,9 +130,13 @@
     geom_point() + 
     geom_line() + 
     facet_wrap(Problem1~.) +
-    scale_color_brewer(type = "qual", palette = 3) 
-  ggsave(filename = file.path(simulDir, "Fig2_FitnessF.pdf"))
+    scale_color_brewer(type = "qual", palette = 3) +
+    theme_linedraw() + 
+    theme(panel.grid = element_blank(), panel.border = element_blank()) 
   
+  ggsave(filename = file.path(simulDir, "Fig2_FitnessF.pdf"),
+    device = "pdf", width = 297, height = 210, units = "mm"  
+  )
   
   ## Plot 3: Complex to linear, can improve but only if also congruent with biases
   ## Need D0 to DD 
@@ -143,8 +152,13 @@
     geom_point() + 
     geom_line() + 
     facet_wrap(Problem1~.) +
-    scale_color_brewer(type = "qual", palette = 3) 
-  ggsave(filename = file.path(simulDir, "Fig3_Fitness_complextolinear.pdf"))
+    scale_color_brewer(type = "qual", palette = 3) +
+    theme_linedraw() + 
+    theme(panel.grid = element_blank(), panel.border = element_blank()) 
+  
+  ggsave(filename = file.path(simulDir, "Fig3_Fitness_complextolinear.pdf"),
+    device = "pdf", width = 297, height = 210, units = "mm"  
+  )
   
   ## Plot 4: linear to linear
   # Needs NE/ND
@@ -160,6 +174,11 @@
     geom_point() + 
     geom_line() + 
     facet_wrap(Problem1~.) +
-    scale_color_brewer(type = "qual", palette = 3) 
-  ggsave(filename = file.path(simulDir, "Fig4_Fitness_lineartolinear.pdf"))
+    scale_color_brewer(type = "qual", palette = 3) +
+    theme_linedraw() + 
+    theme(panel.grid = element_blank(), panel.border = element_blank()) 
+  
+  ggsave(filename = file.path(simulDir, "Fig4_Fitness_lineartolinear.pdf"),
+    device = "pdf", width = 297, height = 210, units = "mm"  
+  )
   

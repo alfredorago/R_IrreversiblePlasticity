@@ -79,7 +79,7 @@ phenotypes <- lapply(phenotypes, function(x){
   x$cues <- row.names(x)
   x
 }) %>% ldply()
-colnames(phenotypes) <-c("ID", "Value", "Cue")
+colnames(phenotypes) <-c("ID", "Trait", "Cue")
 
 phenotype_annotation <- str_extract_all(string = phenotypes$ID, pattern = "[A-Z,0-9]{2,3}") %>%
   ldply()
@@ -87,6 +87,7 @@ colnames(phenotype_annotation) <- c("Problem", "Source", "Replicate", "Timepoint
 phenotype_annotation$Training <- factor(str_extract(string = phenotype_annotation$Problem, pattern = "^."))
 phenotype_annotation$Test <- factor(str_extract(string = phenotype_annotation$Problem, pattern = ".$"))
 phenotype_annotation$Timepoint <- as.numeric(str_extract(string = phenotype_annotation$Timepoint, pattern = "[0-9]."))
+phenotype_annotation$Timepoint <- phenotype_annotation$Timepoint * (100000/10)
 
 phenotypes <- cbind(phenotype_annotation, phenotypes)
 
@@ -102,39 +103,40 @@ problem <- lapply(X = GRN_files, FUN = function(x){
 })
 names(problem) <- names(GRNs)
 problem <- ldply(problem)
-names(problem) <- c('ID', 'Cue', 'Value')
+names(problem) <- c('ID', 'Cue', 'Trait')
 problem$Problem <- as.factor(str_extract(string = problem$ID, pattern = "[A-Z][A-Z,0]"))
-problem <- unique(problem[,c('Cue','Value','Problem')])
+problem <- unique(problem[,c('Cue','Trait','Problem')])
 
 problem_annotation <- unique(phenotype_annotation[,c("Problem", "Timepoint", "Training", "Test")])
 problem <- merge(x = problem, y = problem_annotation, all.x = T, all.y = T, by = "Problem")
 
-# extendedPhenotype <- merge(phenotypes, problem, by = 'ID', all.x = T, all.y = F)
-
-## Plot final reaction norms
-ggplot(data = phenotypes, mapping = aes(x = Cue, y = Value, group = ID)) +
-  geom_line() +
-  ggtitle(basename(GRN_path)) +
-  ylim(c(0,1)) +
-  scale_color_brewer(type = 'seq') +
-  facet_grid(Training+Test~Timepoint) +
-  geom_point(data = problem, mapping = aes(group = NA)) 
-
-ggsave(
-  filename = file.path(GRN_maindir, "ReactionNormMatrix.pdf"), 
-  device = "pdf", width = 300, height = 300, units = "mm")
+# ## Plot final reaction norms
+# ggplot(data = phenotypes, mapping = aes(x = Cue, y = Trait, group = ID)) +
+#   geom_line() +
+#   ggtitle(basename(GRN_path)) +
+#   ylim(c(0,1)) +
+#   scale_color_brewer(type = 'seq') +
+#   facet_grid(Training+Test~Timepoint) +
+#   geom_point(data = problem, mapping = aes(group = NA)) 
+# 
+# ggsave(
+#   filename = file.path(GRN_maindir, "ReactionNormMatrix.pdf"), 
+#   device = "pdf", width = 300, height = 300, units = "mm")
 
 # Fig 1: RN ABBA
 dataplot <- phenotypes[which(phenotypes$Training%in%c('A','B','N') & phenotypes$Test%in%(c('0','A','B','N'))),]
 problemplot <- problem[which(problem$Training%in%c('A','B','N') & problem$Test%in%(c('0','A','B','N'))),]
 
-ggplot(data = dataplot, mapping = aes(x = Cue, y = Value, group = ID, col = Timepoint)) +
+ggplot(data = dataplot, mapping = aes(x = Cue, y = Trait, group = ID, col = Timepoint)) +
   geom_line() +
   ylim(c(0,1)) +
   facet_grid(Training~Test, switch = 'y') +
-  geom_point(data = problemplot, mapping = aes(group = NA, col = -10)) +
-  scale_colour_distiller(type = 'div', palette = 1) +
-  theme_light()
+  geom_point(data = problemplot, mapping = aes(group = NA), fill = 'hotpink', shape = 23, stroke = 0, size = 2) +
+  scale_colour_viridis_c(end = 0.9, direction = -1) +
+  scale_fill_discrete() +
+  theme_linedraw() + 
+  theme(panel.grid = element_blank(), panel.border = element_rect(color = 'grey')) +
+  labs(colour = 'Generations')
 
 ggsave(
   filename = file.path(GRN_maindir, "RN_ABBA.pdf"), 
@@ -144,13 +146,16 @@ ggsave(
 dataplot <- phenotypes[which(phenotypes$Training%in%c('A','B','N','F') & phenotypes$Test%in%(c('0','F'))),]
 problemplot <- problem[which(problem$Training%in%c('A','B','N', 'F') & problem$Test%in%(c('0','F'))),]
 
-ggplot(data = dataplot, mapping = aes(x = Cue, y = Value, group = ID, col = Timepoint)) +
+ggplot(data = dataplot, mapping = aes(x = Cue, y = Trait, group = ID, col = Timepoint)) +
   geom_line() +
   ylim(c(0,1)) +
   facet_grid(Training~Test, switch = 'y') +
-  geom_point(data = problemplot, mapping = aes(group = NA, col = -10)) +
-  scale_colour_distiller(type = 'div', palette = 1) +
-  theme_light()
+  geom_point(data = problemplot, mapping = aes(group = NA), fill = 'hotpink', shape = 23, stroke = 0, size = 2) +
+  scale_colour_viridis_c(end = 0.9, direction = -1) +
+  scale_fill_discrete() +
+  theme_linedraw() + 
+  theme(panel.grid = element_blank(), panel.border = element_rect(color = 'grey')) +
+  labs(colour = 'Generations')
 
 ggsave(
   filename = file.path(GRN_maindir, "RN_ABFN.pdf"), 
@@ -160,13 +165,16 @@ ggsave(
 dataplot <- phenotypes[which(phenotypes$Training%in%c('A','B','N','D') & phenotypes$Test%in%(c('0','D'))),]
 problemplot <- problem[which(problem$Training%in%c('A','B','N', 'D') & problem$Test%in%(c('0','D'))),]
 
-ggplot(data = dataplot, mapping = aes(x = Cue, y = Value, group = ID, col = Timepoint)) +
+ggplot(data = dataplot, mapping = aes(x = Cue, y = Trait, group = ID, col = Timepoint)) +
   geom_line() +
   ylim(c(0,1)) +
   facet_grid(Training~Test, switch = 'y') +
-  geom_point(data = problemplot, mapping = aes(group = NA, col = -10)) +
-  scale_colour_distiller(type = 'div', palette = 1) +
-  theme_light()
+  geom_point(data = problemplot, mapping = aes(group = NA), fill = 'hotpink', shape = 23, stroke = 0, size = 2) +
+  scale_colour_viridis_c(end = 0.9, direction = -1) +
+  scale_fill_discrete() +
+  theme_linedraw() + 
+  theme(panel.grid = element_blank(), panel.border = element_rect(color = 'grey')) +
+  labs(colour = 'Generations')
 
 ggsave(
   filename = file.path(GRN_maindir, "RN_ABFD.pdf"), 
@@ -176,13 +184,16 @@ ggsave(
 dataplot <- phenotypes[which(phenotypes$Training%in%c('E','D') & phenotypes$Test%in%(c('0','D','E'))),]
 problemplot <- problem[which(problem$Training%in%c('E','D') & problem$Test%in%(c('0','D','E'))),]
 
-ggplot(data = dataplot, mapping = aes(x = Cue, y = Value, group = ID, col = Timepoint)) +
+ggplot(data = dataplot, mapping = aes(x = Cue, y = Trait, group = ID, col = Timepoint)) +
   geom_line() +
   ylim(c(0,1)) +
   facet_grid(Training~Test, switch = 'y') +
-  geom_point(data = problemplot, mapping = aes(group = NA, col = -10)) +
-  scale_colour_distiller(type = 'div', palette = 1) +
-  theme_light()
+  geom_point(data = problemplot, mapping = aes(group = NA), fill = 'hotpink', shape = 23, stroke = 0, size = 2) +
+  scale_colour_viridis_c(end = 0.9, direction = -1) +
+  scale_fill_discrete() +
+  theme_linedraw() + 
+  theme(panel.grid = element_blank(), panel.border = element_rect(color = 'grey')) +
+  labs(colour = 'Generations')
 
 ggsave(
   filename = file.path(GRN_maindir, "RN_EDDE.pdf"), 
