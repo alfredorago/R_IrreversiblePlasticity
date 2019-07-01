@@ -17,8 +17,9 @@ develop <- function(cues, epigen, grn, devtime, mzmat, linear){
   sapply(cues, function(c){
     for (i in 1:devtime) {
       transient <- epigen
-      transient[1] <- (c + transient[1])/2
-      transient[2:length(transient)] <- transient[2:length(transient)]/2
+      transient <- transient*1 # (decay term)
+      transient[1] <- (c + transient[1])
+      transient[2:length(transient)] <- transient[2:length(transient)]
       transient <- transient %*% grn
       epigen <- epigen + transient
       if (linear!=1){
