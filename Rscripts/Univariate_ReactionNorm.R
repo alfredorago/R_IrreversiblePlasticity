@@ -47,17 +47,29 @@ mzmat1  <- rep(1/ngenes, ngenes) %>% matrix(nrow = 1)
 linear1 <- 0
 
 ### Import gene networks
-GRN_path <- file.path("../Simulation_results/20190524/E0/")
+
+GRN_path <- file.path("../Simulation_results/20190626/") %>% list.dirs(full.names = T)
 GRN_files <- list.files(path = GRN_path, pattern = "GRN*", full.names = T)
 # Extract weights for the first individual of each file, and store in list of lists (each file is nested within its simulation)
+# This step requires ~6 seconds
 GRNs <- lapply(GRN_files, function(x){
     scan(file=x, what=numeric(), skip=13, n=ngenes^2) %>% matrix(nrow = ngenes)
 })
-ReplicateID = str_extract_all(GRN_files, pattern = "R.[0-9]{1,}")
-ReplicateID = sapply(ReplicateID, function(x){x[length(x)]})
-Timepoint = str_extract_all(GRN_files, pattern = "T[0-9]{2}")
-Timepoint = sapply(Timepoint, function(x){x[length(x)]})
-names(GRNs) = paste(ReplicateID, Timepoint, sep = "_")
+
+ProblemID = str_extract(string = GRN_files, pattern = "[A-Z][A-Z,0]")
+
+ReplicateID = str_extract(string = GRN_files, pattern = "R_?[0-9]{1,2}(?=_T[0-9]{2}.dat)") %>%
+  str_replace(pattern = "_", replacement = "0")
+
+# Source currently depends on directory structure. Could theoretically work from filenames alone
+Source = ifelse(grepl(pattern = "/R[0-9]/", x = GRN_files),
+  str_extract(string = GRN_files, pattern = "(?<=[//])R[0-9]{1,2}"),
+  "R0"
+)
+  
+Timepoint = str_extract(GRN_files, pattern = "T[0-9]{2}(?=[/.dat])") 
+
+names(GRNs) = paste(ProblemID, Source, ReplicateID, Timepoint, sep = "_")
 
 ## Develop GRNs and store results in data.frame w one row per individual/repliate and one col per environment
 phenotypes <- lapply(GRNs, function(x){
@@ -68,28 +80,47 @@ phenotypes <- lapply(phenotypes, function(x){
   x
 }) %>% ldply()
 colnames(phenotypes) <-c("ID", "Value", "Cue")
-phenotypes$Replicate <- as.numeric(str_extract(phenotypes$ID, pattern = "(?<=R_)[0-9]{1,2}"))
-phenotypes$Timepoint <- as.numeric(str_extract(phenotypes$ID, pattern = "(?<=T)[0-9]{2}"))
-#phenotypes$ID <- factor(phenotypes$ID, levels = c(unique(phenotypes$ID), "problem"))
+
+phenotype_annotation <- str_extract_all(string = phenotypes$ID, pattern = "[A-Z,0-9]{2,3}") %>%
+  ldply()
+colnames(phenotype_annotation) <- c("Problem", "Source", "Replicate", "Timepoint")
+phenotype_annotation$Training <- factor(str_extract(string = phenotype_annotation$Problem, pattern = "^."))
+phenotype_annotation$Test <- factor(str_extract(string = phenotype_annotation$Problem, pattern = ".$"))
+
+phenotypes <- cbind(phenotype_annotation, phenotypes)
+
 phenotypes$Cue <- as.numeric(phenotypes$Cue)
 
 ## Import cue/target pairs for plotting
 # Data are contained in lines 1 (targets) and 13 (cues)
-problem = read.fwf(file = GRN_files[[1]], widths = c(31, 13, 17, 17, 17, 17, 17), n = 13)[c(13,1),]
-problem = as.data.frame(t(problem[,-1]))
-colnames(problem) <- c("Cue", "Value")
-problem$ID <- "p"
-problem$Replicate <- 0
-problem$Timepoint <- -1
+
+# TODO: Expand data.frame to include all problems in the set
+
+problem <- lapply(X = GRN_files, FUN = function(x){
+  read.fwf(x, widths = c(31, 13, 17, 17, 17, 17, 17), n = 13)[c(13,1),-1] %>%
+    t() %>%
+    as.data.frame()
+})
+names(problem) <- names(GRNs)
+problem <- ldply(problem)
+names(problem) <- c('ID', 'Cue', 'Value')
+problem$Problem <- as.factor(str_extract(string = problem$ID, pattern = "[A-Z][A-Z,0]"))
+problem <- unique(problem[,c('Cue','Value','Problem')])
+
+problem_annotation <- unique(phenotype_annotation[,c("Problem", "Timepoint", "Training", "Test")])
+problem <- merge(x = problem, y = problem_annotation, all.x = T, all.y = T, by = "Problem")
+
+# extendedPhenotype <- merge(phenotypes, problem, by = 'ID', all.x = T, all.y = F)
 
 ## Plot final reaction norms
-ggplot(data = phenotypes, mapping = aes(x = Cue, y = Value, group = ID, col = Timepoint)) +
-  geom_line(aes(alpha=0.5)) +
-  geom_point(data = problem, mapping = aes(x=Cue, y=Value)) +
+ggplot(data = phenotypes, mapping = aes(x = Cue, y = Value, group = ID)) +
+  geom_line() +
   ggtitle(basename(GRN_path)) +
   ylim(c(0,1)) +
-  scale_color_viridis_c()
+  scale_color_brewer(type = 'seq') +
+  facet_grid(Training+Test~Timepoint) +
+  geom_point(data = problem, mapping = aes(group = NA)) 
 
 ggsave(
   filename = file.path(GRN_path, paste0(basename(GRN_path), '.pdf')), 
-  device = "pdf")
+  device = "pdf", width = 297, height = 210, units = "mm")
