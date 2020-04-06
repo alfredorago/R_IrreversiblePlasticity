@@ -4,111 +4,17 @@
   # Show clearly shift between training and test
   # Have a different color for each type of test simulation (same problem/different problem)
   
-  library(data.table)
   library(tidyverse)
   library(magrittr)
+
+ pheno_data <- read_csv(file = here::here("results/format_phenotypes/all_fitness_results.csv"))
   
-  # Define conversion table from problem code to problem name
-  problem_codes <- 
-    data.frame(
-      problem_names = c("n", "a", "b", "d", "e", "f"),
-      problem_codes = c("122345", "312452", "254213", "223344", "443322", "224411")
-    )
-  
-  # Define main simulation directory
-  simul_dir <- file.path("../Simulation_results")
-  
-  ## Import and annotate phenotype files from training simulation
-  train_dir <- dir(path = simul_dir, pattern = "[a,b,n]_train", full.names = T)
-  train_pheno <- list.files(path = train_dir, pattern = "PHEN.*", full.names = T)
-  train_pheno_list <- lapply(
-    X = train_pheno, 
-    FUN = fread, 
-    header = FALSE,
-    col.names = c("replicate", "generation", "individual", "environment", "trait", "phenotype", "fitness")
-  ) %>% 
-    purrr::set_names(
-      str_extract(string = train_pheno, pattern = "PHEN_TR_[^.]*")
-    )
-  
-  # Add columns source_problem, source_replicate, source_time, target_problem
-  train_pheno_data <-
-    train_pheno_list %>% 
-    bind_rows(., .id = "simulation_id") %>% 
-    mutate(
-      source_problem = NA,
-      source_replicate = NA,
-      source_generation = NA,
-      target_replicate = replicate,
-      target_generation = generation,
-      target_problem = str_extract(string = simulation_id, pattern = "[0-9]{6}"),
-      target_problem = factor(
-        x = target_problem,
-        levels = problem_codes$problem_codes, 
-        labels = problem_codes$problem_names)
-    ) %>% 
-    dplyr::select(
-      c("source_problem", "source_replicate", "source_generation", "target_problem", "target_replicate", "target_generation", "individual", "environment", "trait", "phenotype", "fitness")
-    )
-  
-  ## Import and annotate phenotype files from test simulations
-  
-  test_dir <- dir(path = simul_dir, pattern = "[a,b,n]_test", full.names = T)
-  test_pheno <- list.files(
-    path = test_dir,
-    pattern = "PHEN.*", 
-    full.names = T) %>% 
-    magrittr::extract(1:100)
-  
-  test_pheno_list <- lapply(
-    X = test_pheno, 
-    FUN = fread, 
-    header = FALSE,
-    col.names = c("replicate", "generation", "individual", "environment", "trait", "phenotype", "fitness")
-  ) %>% 
-    purrr::set_names(
-      str_extract(string = test_pheno, pattern = "PHE[^.]*")  
-    )
-    
-    # Add columns source_problem, source_replicate, source_time, target_problem
-  test_pheno_data <-
-    test_pheno_list %>% 
-    bind_rows(., .id = "simulation_id") %>% 
-    tidyr::extract(
-      col = "simulation_id",
-      into = c("source_problem", "source_replicate", "source_generation", "target_problem"),
-      regex = "PHE_([0-9]{6})_C_1_R_?([0-9]{1,2})_T([0-9]{2})PHEN_TE_([0-9]{6}).*",
-      remove = TRUE
-    ) %>% 
-    mutate(
-      source_generation = source_generation %>% as.numeric,
-      target_generation = generation,
-      target_replicate = replicate,
-      source_problem = factor(
-        x = source_problem, 
-        levels = problem_codes$problem_codes, 
-        labels = problem_codes$problem_names),
-      target_problem = factor(
-        x = target_problem,
-        levels = problem_codes$problem_codes, 
-        labels = problem_codes$problem_names)
-    ) %>% 
-    dplyr::select(
-      c("source_problem", "source_replicate", "source_generation", "target_problem", "target_replicate", "target_generation", "individual", "environment", "trait", "phenotype", "fitness")
-    )
-  
-  ## Merge files
-  pheno_data <- rbind(train_pheno_data, test_pheno_data)
-  
-  ## Filter only one individual per simulation per time point
-  
-  # Annotate initial training with appropriate problem
-  
-  ## Main test plot: mostly useful to see all data is here and formatted correctly
-  ggplot(data = PhenoData, 
-    mapping = aes(x = Generation, y = Fitness, col = Problem2, group = .id)) +
+    ## Main test plot: mostly useful to see all data is here and formatted correctly
+  ggplot(data = pheno_data, 
+    mapping = aes(x = target_generation, y = fitness, 
+                  col = target_problem, group = target_replicate)) +
     geom_line() + geom_point() + 
-    facet_wrap(Problem1~.) +
+    facet_wrap(source_problem~.) +
     scale_color_brewer(type = 'qual', palette = 3)
   ggsave(filename = file.path(simulDir, "fitness.pdf"))
 
