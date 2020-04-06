@@ -17,8 +17,8 @@ problem_codes <-
 simul_dir <- file.path("../Simulation_results")
 
 ## Import and annotate phenotype files from training simulation
-train_dir <- dir(path = simul_dir, pattern = "[a,b,n]_train", full.names = T)
-train_pheno <- list.files(path = train_dir, pattern = "PHEN.*", full.names = T)
+train_dir <- dir(path = simul_dir, pattern = "[a-z]_train", full.names = T)
+train_pheno <- list.files(path = train_dir, pattern = "PHE.*", full.names = T)
 train_pheno_list <- lapply(
   X = train_pheno, 
   FUN = fread, 
@@ -52,10 +52,10 @@ train_pheno_data <-
 
 ## Import and annotate phenotype files from test simulations
 
-test_dir <- dir(path = simul_dir, pattern = "[a,b,n]_test", full.names = T)
+test_dir <- dir(path = simul_dir, pattern = "[a-z]_test", full.names = T)
 test_pheno <- list.files(
   path = test_dir,
-  pattern = "PHEN.*", 
+  pattern = "PHE.*", 
   full.names = T) 
 
 test_pheno_list <- lapply(
@@ -76,8 +76,8 @@ test_pheno_data <-
   tidyr::extract(
     col = "simulation_id",
     into = c("source_problem", "source_replicate", "source_generation", "target_problem"),
-    regex = "PHE_([0-9]{6})_C_1_R_?([0-9]{1,2})_T([0-9]{2})PHEN_TE_([0-9]{6}).*",
-    remove = TRUE
+    regex = "PHE_([0-9]{6})_.*_R_?([0-9]{1,2})_T([0-9]{2})PHEN_TE_([0-9]{6}).*",
+    remove = F
   ) %>% 
   mutate(
     source_generation = source_generation %>% as.numeric,
@@ -102,3 +102,5 @@ pheno_data <-
 
 ## Save results
 write_csv(x = pheno_data, path = here::here("results/format_phenotypes/all_fitness_results.csv"))
+
+# Must be imported with read_csv(col_types = "ffiffiiidd")
