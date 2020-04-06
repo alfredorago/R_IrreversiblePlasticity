@@ -38,7 +38,9 @@
     mutate(
       source_problem = NA,
       source_replicate = NA,
-      source_timepoint = NA,
+      source_generation = NA,
+      target_replicate = replicate,
+      target_generation = generation,
       target_problem = str_extract(string = simulation_id, pattern = "[0-9]{6}"),
       target_problem = factor(
         x = target_problem,
@@ -46,39 +48,42 @@
         labels = problem_codes$problem_names)
     ) %>% 
     dplyr::select(
-      -"simulation_id"
+      c("source_problem", "source_replicate", "source_generation", "target_problem", "target_replicate", "target_generation", "individual", "environment", "trait", "phenotype", "fitness")
     )
   
   ## Import and annotate phenotype files from test simulations
   
-  testDir <- dir(path = simulDir, pattern = "[a,b,n]_test", full.names = T)
-  testPheno <- list.files(path = testDir,
+  test_dir <- dir(path = simul_dir, pattern = "[a,b,n]_test", full.names = T)
+  test_pheno <- list.files(
+    path = test_dir,
     pattern = "PHEN.*", 
     full.names = T) %>% 
-    magrittr::extract(1:10)
+    magrittr::extract(1:100)
   
-  testPhenoList <- lapply(
-    X = testPheno, 
+  test_pheno_list <- lapply(
+    X = test_pheno, 
     FUN = fread, 
     header = FALSE,
-    col.names = c("Replicate", "Generation", "Individual", "Environment", "Trait", "Phenotype", "Fitness")
-  )
-  
-  names(testPhenoList) <- 
-    testPheno %>% 
-    str_extract(string = ., pattern = "PHE[^.]*")
-  
-  # Add columns source_problem, source_replicate, source_time, target_problem
+    col.names = c("replicate", "generation", "individual", "environment", "trait", "phenotype", "fitness")
+  ) %>% 
+    purrr::set_names(
+      str_extract(string = test_pheno, pattern = "PHE[^.]*")  
+    )
+    
+    # Add columns source_problem, source_replicate, source_time, target_problem
   test_pheno_data <-
-    testPhenoList %>% 
+    test_pheno_list %>% 
     bind_rows(., .id = "simulation_id") %>% 
     tidyr::extract(
       col = "simulation_id",
-      into = c("source_problem", "source_replicate", "source_timepoint", "target_problem"),
-      regex = "PHE_([0-9]{6})_C_1_(R[0-9,_]{2})_T([0-9]{2})PHEN_TE_([0-9]{6}).*",
+      into = c("source_problem", "source_replicate", "source_generation", "target_problem"),
+      regex = "PHE_([0-9]{6})_C_1_R_?([0-9]{1,2})_T([0-9]{2})PHEN_TE_([0-9]{6}).*",
       remove = TRUE
     ) %>% 
     mutate(
+      source_generation = source_generation %>% as.numeric,
+      target_generation = generation,
+      target_replicate = replicate,
       source_problem = factor(
         x = source_problem, 
         levels = problem_codes$problem_codes, 
@@ -87,20 +92,17 @@
         x = target_problem,
         levels = problem_codes$problem_codes, 
         labels = problem_codes$problem_names)
+    ) %>% 
+    dplyr::select(
+      c("source_problem", "source_replicate", "source_generation", "target_problem", "target_replicate", "target_generation", "individual", "environment", "trait", "phenotype", "fitness")
     )
   
   ## Merge files
-  PhenoData <- rbind(trainPhenoData, testPhenoData)
+  pheno_data <- rbind(train_pheno_data, test_pheno_data)
   
   ## Filter only one individual per simulation per time point
-  PhenoData <- PhenoData[which(PhenoData$Individual==1 & PhenoData$Environment==1),]
-  PhenoData <- PhenoData[,c(".id", "Replicate", "Generation", "Fitness", "Training", "Problem1", "Problem2", "Source")]
-  PhenoData <- PhenoData[which(duplicated(PhenoData[,c("Replicate", "Generation", "Training", "Problem1", "Problem2", "Source")])==FALSE),]
   
   # Annotate initial training with appropriate problem
-  PhenoData$Problem2[which(PhenoData$Problem2=='0')] <- PhenoData$Problem1[which(PhenoData$Problem2=='0')]
-  
-  
   
   ## Main test plot: mostly useful to see all data is here and formatted correctly
   ggplot(data = PhenoData, 
