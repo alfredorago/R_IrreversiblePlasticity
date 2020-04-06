@@ -6,6 +6,7 @@
   
   library(data.table)
   library(tidyverse)
+  library(magrittr)
   
   # Define conversion table from problem code to problem name
   problem_codes <- 
@@ -15,33 +16,38 @@
     )
   
   # Define main simulation directory
-  simulDir <- file.path("../Simulation_results")
+  simul_dir <- file.path("../Simulation_results")
   
   ## Import and annotate phenotype files from training simulation
-  trainDir <- dir(path = simulDir, pattern = "[a,b,n]_train", full.names = T)
-  trainPheno <- list.files(path = trainDir, pattern = "PHEN.*", full.names = T)
-  trainPhenoList <- lapply(
-    X = trainPheno, 
+  train_dir <- dir(path = simul_dir, pattern = "[a,b,n]_train", full.names = T)
+  train_pheno <- list.files(path = train_dir, pattern = "PHEN.*", full.names = T)
+  train_pheno_list <- lapply(
+    X = train_pheno, 
     FUN = fread, 
     header = FALSE,
-    col.names = c("Replicate", "Generation", "Individual", "Environment", "Trait", "Phenotype", "Fitness")
-  )
+    col.names = c("replicate", "generation", "individual", "environment", "trait", "phenotype", "fitness")
+  ) %>% 
+    purrr::set_names(
+      str_extract(string = train_pheno, pattern = "PHEN_TR_[^.]*")
+    )
   
-  # Compose .id as problem1, problem2, source, replicate
-  names(trainPhenoList) <- paste(
-    str_extract(string = as.character(trainPheno), pattern = "(?<=[//])[A-Z]{1}0"),
-    "R0", # No source replicate since training, keeping formatting constant  
-    str_extract(string = as.character(trainPheno), pattern = "(?<=[_])R[0-9]{2}"),
-    sep = "_"
-  )
-  
-  trainPhenoData <- ldply(trainPhenoList)
-  trainPhenoData$Training <- factor(x = rep(1, nrow(trainPhenoData)), levels = c(0,1))
-  trainPhenoData$Problem1 <- factor(x = str_extract(string = trainPhenoData$.id, pattern = "^."), 
-    levels = c("0" ,"A" ,"B" ,"D", "E", "F", "N"))
-  trainPhenoData$Problem2 <- factor(x = str_extract(string = trainPhenoData$.id, pattern = "(?<=^[A-Z])."), 
-    levels = c("0" ,"A" ,"B" ,"D", "E", "F", "N") )
-  trainPhenoData$Source <- factor(str_extract(string = trainPhenoData$.id, pattern = "(?<=_)R[0-9]{1,2}"))
+  # Add columns source_problem, source_replicate, source_time, target_problem
+  train_pheno_data <-
+    train_pheno_list %>% 
+    bind_rows(., .id = "simulation_id") %>% 
+    mutate(
+      source_problem = NA,
+      source_replicate = NA,
+      source_timepoint = NA,
+      target_problem = str_extract(string = simulation_id, pattern = "[0-9]{6}"),
+      target_problem = factor(
+        x = target_problem,
+        levels = problem_codes$problem_codes, 
+        labels = problem_codes$problem_names)
+    ) %>% 
+    dplyr::select(
+      -"simulation_id"
+    )
   
   ## Import and annotate phenotype files from test simulations
   
@@ -58,7 +64,6 @@
     col.names = c("Replicate", "Generation", "Individual", "Environment", "Trait", "Phenotype", "Fitness")
   )
   
-  # Compose .id as problem1, problem2, source, replicate
   names(testPhenoList) <- 
     testPheno %>% 
     str_extract(string = ., pattern = "PHE[^.]*")
