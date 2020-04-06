@@ -80,7 +80,6 @@ test_pheno_data <-
     remove = F
   ) %>% 
   mutate(
-    source_generation = source_generation %>% as.numeric,
     target_generation = generation,
     target_replicate = replicate,
     source_problem = factor(
@@ -90,7 +89,11 @@ test_pheno_data <-
     target_problem = factor(
       x = target_problem,
       levels = problem_codes$problem_codes, 
-      labels = problem_codes$problem_names)
+      labels = problem_codes$problem_names),
+    source_generation = 
+      factor(x = as.integer(source_generation), levels = c(1:10), labels = unique(target_generation)) %>% 
+      as.character %>% as.numeric,
+    target_generation = target_generation %>% add(5e5)
   ) %>% 
   dplyr::select(
     c("source_problem", "source_replicate", "source_generation", "target_problem", "target_replicate", "target_generation", "environment", "trait", "phenotype", "fitness")
@@ -103,4 +106,4 @@ pheno_data <-
 ## Save results
 write_csv(x = pheno_data, path = here::here("results/format_phenotypes/all_fitness_results.csv"))
 
-# Must be imported with read_csv(col_types = "ffiffiiidd")
+# Must be imported with read_csv(col_types = "ffdffdiidd")
