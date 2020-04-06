@@ -4,16 +4,21 @@
   # Show clearly shift between training and test
   # Have a different color for each type of test simulation (same problem/different problem)
   
-  library(plyr)
-  library(stringr)
   library(data.table)
-  library(ggplot2)
+  library(tidyverse)
+  
+  # Define conversion table from problem code to problem name
+  problem_codes <- 
+    data.frame(
+      problem_names = c("n", "a", "b", "d", "e", "f"),
+      problem_codes = c("122345", "312452", "254213", "223344", "443322", "224411")
+    )
   
   # Define main simulation directory
-  simulDir <- file.path("../Simulation_results/20190626/")
+  simulDir <- file.path("../Simulation_results")
   
   ## Import and annotate phenotype files from training simulation
-  trainDir <- dir(path = simulDir, pattern = ".0", full.names = T)
+  trainDir <- dir(path = simulDir, pattern = "[a,b,n]_train", full.names = T)
   trainPheno <- list.files(path = trainDir, pattern = "PHEN.*", full.names = T)
   trainPhenoList <- lapply(
     X = trainPheno, 
@@ -40,37 +45,44 @@
   
   ## Import and annotate phenotype files from test simulations
   
-  testDir <- dir(path = simulDir, pattern = "[A-Z]$", full.names = T)
-  replicates <- apply(expand.grid("R", 1:3), 1, paste, collapse="")
-  testDir <- apply(expand.grid(testDir, replicates), 1, paste, collapse="/")
-  testDir
+  testDir <- dir(path = simulDir, pattern = "[a,b,n]_test", full.names = T)
   testPheno <- list.files(path = testDir,
     pattern = "PHEN.*", 
-    full.names = T)
+    full.names = T) %>% 
+    magrittr::extract(1:10)
+  
   testPhenoList <- lapply(
     X = testPheno, 
     FUN = fread, 
     header = FALSE,
     col.names = c("Replicate", "Generation", "Individual", "Environment", "Trait", "Phenotype", "Fitness")
   )
+  
   # Compose .id as problem1, problem2, source, replicate
-  names(testPhenoList) <- paste(
-    str_extract(string = as.character(testPheno), pattern = "(?<=[//])[A-Z]{2}"),
-    str_extract(string = as.character(testPheno), pattern = "(?<=[//])R[0-9]{1,2}"), # assumes source populations to have index R1 to R99 
-    str_extract(string = as.character(testPheno), pattern = "(?<=[_])R[0-9]{2}"),
-    sep = "_"
+  names(testPhenoList) <- 
+    testPheno %>% 
+    str_extract(string = ., pattern = "PHE[^.]*")
+  
+  # Add columns source_problem, source_replicate, source_time, target_problem
+  test_pheno_data <-
+    testPhenoList %>% 
+    bind_rows(., .id = "simulation_id") %>% 
+    tidyr::extract(
+      col = "simulation_id",
+      into = c("source_problem", "source_replicate", "source_timepoint", "target_problem"),
+      regex = "PHE_([0-9]{6})_C_1_(R[0-9,_]{2})_T([0-9]{2})PHEN_TE_([0-9]{6}).*",
+      remove = TRUE
+    ) %>% 
+    mutate(
+      source_problem = factor(
+        x = source_problem, 
+        levels = problem_codes$problem_codes, 
+        labels = problem_codes$problem_names),
+      target_problem = factor(
+        x = target_problem,
+        levels = problem_codes$problem_codes, 
+        labels = problem_codes$problem_names)
     )
-  
-  testPhenoData <- ldply(testPhenoList)
-  testPhenoData$Training <- factor(x = rep(0, nrow(trainPhenoData)), levels = c(0,1))
-  testPhenoData$Problem1 <- factor(x = str_extract(string = testPhenoData$.id, pattern = "^."), 
-    levels = c("0", "A","B", "D", "E", "F", "N"))
-  testPhenoData$Problem2 <- factor(x = str_extract(string = testPhenoData$.id, pattern = "(?<=^[A-Z])."), 
-    levels = c("0", "A","B", "D", "E", "F", "N") )
-  testPhenoData$Source <- factor(str_extract(string = testPhenoData$.id, pattern = "(?<=_)R[0-9]{1,2}"))
-  # Warning, code below assumes same number of generations for each test run
-  testPhenoData$Generation <- testPhenoData$Generation+max(trainPhenoData$Generation)
-  
   
   ## Merge files
   PhenoData <- rbind(trainPhenoData, testPhenoData)
