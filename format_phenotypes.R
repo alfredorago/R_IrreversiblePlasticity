@@ -92,8 +92,8 @@ test_pheno_data <-
       labels = problem_codes$problem_names),
     source_generation = 
       factor(x = as.integer(source_generation), levels = c(1:10), labels = unique(target_generation)) %>% 
-      as.character %>% as.numeric,
-    target_generation = target_generation %>% add(5e5)
+      as.character %>% as.double(),
+    target_generation = target_generation %>% add(source_generation) %>% as.double()
   ) %>% 
   dplyr::select(
     c("source_problem", "source_replicate", "source_generation", "target_problem", "target_replicate", "target_generation", "environment", "trait", "phenotype", "fitness")
@@ -103,7 +103,14 @@ test_pheno_data <-
 pheno_data <- 
   rbind(train_pheno_data, test_pheno_data) 
 
-## Save results
+## Save full results
 write_csv(x = pheno_data, path = here::here("results/format_phenotypes/all_fitness_results.csv"))
 
-# Must be imported with read_csv(col_types = "ffdffdiidd")
+## Save only fitness
+fitness_data <-
+  pheno_data %>% 
+  filter(environment == 1, trait == 1) %>% 
+  dplyr::select(-c("environment", "trait", "phenotype"))
+
+write_csv(x = fitness_data, path = here::here("results/format_phenotypes/fitness_results.csv"))
+# Must be imported with read_csv(col_types = "ffdffdd")
